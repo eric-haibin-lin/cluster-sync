@@ -1,9 +1,5 @@
-echo '==================== installing lustre client ...  ==================== ';
-sudo yum -q install -y lustre-client;
-# wget https://downloads.whamcloud.com/public/lustre/lustre-2.10.6/ubuntu1604/client/lustre-client-modules-4.4.0-131-generic_2.10.6-1_amd64.deb
-# wget https://downloads.whamcloud.com/public/lustre/lustre-2.10.6/ubuntu1604/client/lustre-utils_2.10.6-1_amd64.deb
-# sudo apt-get install -y ./lustre-*_2.10.6*.deb
-
+# echo '==================== installing lustre client ...  ==================== ';
+# sudo yum -q install -y lustre-client;
 
 wget -q http://169.254.169.254/latest/meta-data/placement/availability-zone -O az_info;
 AZ_ID=$(cat az_info);

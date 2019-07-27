@@ -3,8 +3,8 @@
 if [ $# -ne 7 ]; then
     echo 'usage: ';
     echo 'bash dependency.sh dmlc master mxnet-cu90==1.5.0b20190412 bert-baseline 196b65b 90 py27';
-    echo 'bash dependency.sh eric-haibin-lin raw mxnet-cu101==1.5.0b20190525 bert-baseline-raw 2177746 101 py36'; 
-    echo 'bash dependency.sh eric-haibin-lin raw mxnet-cu101==1.6.0b20190725 bert-baseline-raw 4376ac 101 py36';
+    echo 'bash dependency.sh eric-haibin-lin raw   mxnet-cu101==1.5.0b20190525 bert-baseline-raw 2177746 101 py36'; 
+    echo 'bash dependency.sh eric-haibin-lin sizes mxnet-cu101==1.6.0b20190725 owt-0725-small 4376ac 101 py35';
     echo "number of arguments received=$#";
     exit -1;
 fi
@@ -22,13 +22,12 @@ export PY_VERSION=$7
 echo "==================== arguments ==================== ";
 echo "remote=$REMOTE, branch=$BRANCH, mxnet pip version=$MX_PIP, experiment=$EXP, horovod commit=$HVD, python version=$PY_VERSION";
 
-if [ $PY_VERSION = 'py27' ]; then
-  export PY='python27';
-  export PIP='pip';
-fi
-if [ $PY_VERSION = 'py36' ]; then
-  export PY='python3';
+if [ $PY_VERSION = 'py35' ]; then
+  export PY='python3.5';
   export PIP='pip3';
+else
+  echo "Unsupported python version"
+  exit
 fi
 
 wget -q -O mount.sh https://gist.github.com/eric-haibin-lin/b7569d7ada15ca16a1815713880387fc/raw/c76e78bc38759d5be67757355bce9be28312fb67/mount.sh
@@ -37,13 +36,13 @@ bash mount.sh
 echo "==================== checking cuda $CUDA...  ==================== ";
 if [ $CUDA = '101' ]; then
   sudo rm -f /usr/local/cuda; sudo ln -s /usr/local/cuda-10.1 /usr/local/cuda;
-fi
-if [ $CUDA = '90' ]; then
+elif [ $CUDA = '90' ]; then
   sudo rm -f /usr/local/cuda; sudo ln -s /usr/local/cuda-9.0 /usr/local/cuda;
 fi
 
 echo "==================== cloning $REMOTE/gluon-nlp:$BRANCH ==================== ";
 git clone -b $BRANCH https://github.com/$REMOTE/gluon-nlp /fsx/$EXP || true;
+git fetch origin; git reset --hard $BRANCH;
 
 $PIP -q install sentencepiece --user;
 

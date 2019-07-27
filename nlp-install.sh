@@ -10,13 +10,12 @@ fi
 export EXP=$1
 export PY_VERSION=$2
 
-if [ $PY_VERSION = 'py27' ]; then
-  export PY='python27';
-  export PIP='pip';
-fi
-if [ $PY_VERSION = 'py36' ]; then
-  export PY='python36';
+if [ $PY_VERSION = 'py35' ]; then
+  export PY='python3.5';
   export PIP='pip3';
+else
+  echo "Unsupported version"
+  exit
 fi
 
 cd /fsx/$EXP;
