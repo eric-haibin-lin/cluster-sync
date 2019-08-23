@@ -32,7 +32,7 @@ elif [ $DMLC_ROLE = 'worker' ]; then
        python3 run_pretraining_hvd.py --data='~/mxnet-data/bert-pretraining/datasets/*/*/*.train,' \
        --data_eval='~/mxnet-data/bert-pretraining/datasets/*/*/*.dev,' --num_steps 1000000        \
        --lr 1e-4 --batch_size 4096 --accumulate 1 --raw --short_seq_prob 0 --log_interval 10 \
-       --accumulate 1 --model bert_24_1024_16 --batch_size_eval 12 --backend byteps
+       --accumulate 1 --model bert_12_768_12 --batch_size_eval 1 --backend byteps
 
 elif [ $DMLC_ROLE = 'scheduler' ]; then
   python /usr/local/byteps/launcher/launch.py
