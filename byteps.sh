@@ -23,10 +23,10 @@ elif [ $DMLC_ROLE = 'worker' ]; then
   export MXNET_SAFE_ACCUMULATION=1;
   export DMLC_WORKER_ID=0;
   #python /usr/local/byteps/launcher/launch.py \
-  #     python run_pretraining_hvd.py --data='~/mxnet-data/bert-pretraining/datasets/*/*/*.train,' \
+  #     python3 run_pretraining_hvd.py --data='~/mxnet-data/bert-pretraining/datasets/*/*/*.train,' \
   #     --data_eval='~/mxnet-data/bert-pretraining/datasets/*/*/*.dev,' --num_steps 1000000        \
   #     --lr 1e-4 --batch_size 4096 --accumulate 1 --raw --short_seq_prob 0 --log_interval 10 \
-  #     --accumulate 1 --model bert_24_1024_16 --batch_size_eval 12
+  #     --accumulate 1 --model bert_24_1024_16 --batch_size_eval 12 --backend byteps
 
   export EVAL_TYPE=benchmark
   python /usr/local/byteps/launcher/launch.py \
