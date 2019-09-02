@@ -1,32 +1,32 @@
-num_worker=4
-num_physical_server=4
-num_server=12
-root_ip=172.32.37.101
-server_hosts=server_4
-# server_hosts=worker_4
-worker_hosts=worker_4
+num_worker=32
+num_physical_server=32
+num_server=64
+root_ip=172.31.4.108
+server_hosts=server_32
+worker_hosts=worker_32
 
 # net=bert_24_1024_16
 # batch_size=12
 
 byte_part_size=4096000
-byte_num_rings=1
-byte_num_groups=4
+byte_num_rings=12
+byte_num_groups=8
 byte_pcie=8
 byte_push=1
 byte_omp=1
 byte_cpu=1
 byte_load_balance=2
-
+credit_size=$byte_num_groups + 1
+credit_size=0
 
 server_docker=haibinlin/server:3
-worker_docker=haibinlin/worker:7
+worker_docker=haibinlin/worker:8
 
 # cleanup
-# hudl -h $server_hosts "docker pull $server_docker"
-hudl -h $server_hosts 'sudo pkill python'
-# hudl -h $worker_hosts "docker pull $worker_docker"
-hudl -h $worker_hosts 'sudo pkill python3'
+hudl -h $server_hosts "docker pull $server_docker; sudo pkill python"
+#hudl -v -h $server_hosts 'sudo pkill python'
+hudl -h $worker_hosts "docker pull $worker_docker; sudo pkill python3"
+#hudl -v -h $worker_hosts 'sudo pkill python3'
 
 # scheduler
 nvidia-docker run -d -v ~/.ssh:/root/.ssh --network=host --shm-size=32768m $server_docker bash -c "cd gluon-nlp/scripts/bert/; bash byteps.sh $num_server $num_worker $root_ip  1234 scheduler $byte_part_size $byte_num_rings $byte_num_groups $byte_push $byte_omp $byte_cpu"
@@ -39,7 +39,7 @@ do
   then
     break
   fi
-  hudl -h $server_hosts -t "nvidia-docker run -d -v ~/.ssh:/root/.ssh --network=host --shm-size=32768m $server_docker bash -c 'cd gluon-nlp/scripts/bert/; bash byteps.sh $num_server $num_worker $root_ip  1234 server $byte_part_size $byte_num_rings $byte_num_groups $byte_push $byte_omp $byte_cpu'"
+  hudl -h $server_hosts -t -v "nvidia-docker run -d -v ~/.ssh:/root/.ssh --network=host --shm-size=32768m $server_docker bash -c 'cd gluon-nlp/scripts/bert/; bash byteps.sh $num_server $num_worker $root_ip  1234 server $byte_part_size $byte_num_rings $byte_num_groups $byte_push $byte_omp $byte_cpu'"
   echo "launched $num_physical_server servers: nvidia-docker run -d -v ~/.ssh:/root/.ssh --network=host --shm-size=32768m $server_docker bash -c 'cd gluon-nlp/scripts/bert/; bash byteps.sh $num_server $num_worker $root_ip  1234 server $byte_part_size $byte_num_rings $byte_num_groups $byte_push $byte_omp $byte_cpu'"
   let "num_server_iter+=1"
 done;
