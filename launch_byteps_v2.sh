@@ -1,20 +1,15 @@
-export DMLC_NUM_WORKER=1
-export DMLC_NUM_SERVER=1
+export DMLC_NUM_WORKER=8
+export DMLC_NUM_SERVER=24
 # this cannot be hostname
 export DMLC_PS_ROOT_URI=172.31.47.42
 export DMLC_PS_ROOT_PORT=1234
 
-num_physical_server=1
-
-server_hosts=worker_0
-worker_hosts=worker_0
+num_physical_server=8
+server_hosts=server_8
+worker_hosts=worker_8
 
 server_docker=haibinlin/byteps-server:c5fd6fc
-worker_docker=haibinlin/worker_mxnet:c5fd6fc-0412-cu90-efede6
-
-net=bert_24_1024_16
-batch_size=8
-CKPTDIR="ckpt_stage1_lamb"
+worker_docker=haibinlin/worker_mxnet:c5fd6fc-0901-cu90-5c2e0
 
 export BYTEPS_PARTITION_BYTES=4096000
 export BYTEPS_NCCL_NUM_RINGS=16
@@ -28,6 +23,9 @@ export BYTEPS_FORCE_DISTRIBUTED=1
 #credit_size=0
 #async=0
 #timeline=0
+
+hudl -v -t -h $server_hosts "sudo pkill python; docker pull $server_docker"
+hudl -v -t -h $worker_hosts "sudo pkill python; docker pull $worker_docker"
 
 COMMON_ENV="export DMLC_NUM_WORKER=$DMLC_NUM_WORKER; \
             export DMLC_NUM_SERVER=$DMLC_NUM_SERVER; \
@@ -56,31 +54,46 @@ do
     break
   fi
   SERVER_CMD_DOCKER="$DOCKER $server_docker bash -c '$SERVER_CMD'"
-  hudl -h $server_hosts -t -v "sudo pkill python; $SERVER_CMD_DOCKER"
+  hudl -h $server_hosts -t -v "$SERVER_CMD_DOCKER"
   echo "launched $num_physical_server servers"
   let "num_server_iter+=1"
 done;
 
-LOGINTERVAL=1;
+BS=16384;
+LR=0.00354;
+WARMUP_RATIO=0.1;
+NUMSTEPS=281250;
+CKPTDIR="ckpt_stage1_lamb_16x";
+ACC=4;
+COMMIT="e2009ac";
 
-            #export OPTIONS=--raw; \
+LOGINTERVAL=100;
+
+            #export OPTIONS=--synthetic_data --eval_use_npz; \
+
 WORKER_ENV="$COMMON_ENV \
             export BYTEPS_PARTITION_BYTES=$BYTEPS_PARTITION_BYTES; \
             export BYTEPS_NCCL_NUM_RINGS=$BYTEPS_NCCL_NUM_RINGS; \
             export BYTEPS_USE_HASH_KEY=$BYTEPS_USE_HASH_KEY; \
             export BYTEPS_FORCE_DISTRIBUTED=$BYTEPS_FORCE_DISTRIBUTED; \
-            export OPTIONS=--synthetic_data --eval_use_npz; \
-            export LOGINTERVAL=$LOGINTERVAL; \
             export GPUS=0,1,2,3,4,5,6,7; \
-            DMLC_ROLE=worker;"
+            export OPTIONS=--raw; \
+            export LOGINTERVAL=$LOGINTERVAL; \
+            export BS=$BS; \
+            export LR=$LR; \
+            export WARMUP_RATIO=$WARMUP_RATIO; \
+            export NUMSTEPS=$NUMSTEPS; \
+            export CKPTDIR=$CKPTDIR; \
+            export ACC=$ACC; \
+            export DMLC_ROLE=worker;"
 
 count=0
 while read -u 10 host;
 do
   host=${host%% slots*}
-  WORKER_CMD="cd $SCRIPT_HOME; $WORKER_ENV export DMLC_WORKER_ID=$count; bash bps.sh"
+  WORKER_CMD="cd $SCRIPT_HOME; git fetch origin; git reset --hard $COMMIT; $WORKER_ENV export DMLC_WORKER_ID=$count; bash bps.sh"
   WORKER_CMD_DOCKER="$DOCKER -d $worker_docker bash -c '$WORKER_CMD'"
   echo "$WORKER_CMD_DOCKER on $host"
-  ssh -o "StrictHostKeyChecking no" $host tmux new -d "sudo pkill python3; $DOCKER -d $worker_docker bash -c '$WORKER_CMD'"
+  ssh -o "StrictHostKeyChecking no" $host tmux new -d "$DOCKER -d $worker_docker bash -c '$WORKER_CMD'"
   let "count+=1"
 done 10<$worker_hosts;

@@ -1,5 +1,13 @@
-# echo '==================== installing lustre client ...  ==================== ';
-# sudo yum -q install -y lustre-client;
+echo '==================== installing lustre client ...  ==================== ';
+sudo yum -q install -y lustre-client;
+
+sudo apt-get install -y linux-image-4.4.0-131-generic
+sudo apt-get install -y linux-headers-4.4.0-131-generic
+
+wget https://downloads.whamcloud.com/public/lustre/lustre-2.10.6/ubuntu1604/client/lustre-client-modules-4.4.0-131-generic_2.10.6-1_amd64.deb
+wget https://downloads.whamcloud.com/public/lustre/lustre-2.10.6/ubuntu1604/client/lustre-utils_2.10.6-1_amd64.deb
+sudo apt-get install -y ./lustre-*_2.10.6*.deb
+
 
 wget -q http://169.254.169.254/latest/meta-data/placement/availability-zone -O az_info;
 AZ_ID=$(cat az_info);
@@ -30,4 +38,3 @@ echo "==================== mount $TARGET lustre file system ... ================
 sudo mkdir -p /fsx;
 sudo mount -t lustre $TARGET.amazonaws.com@tcp:/fsx /fsx;
 sudo chmod a+w /fsx;
-
