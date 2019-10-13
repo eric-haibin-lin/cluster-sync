@@ -61,12 +61,16 @@ do
   let "num_server_iter+=1"
 done;
 
+LOGINTERVAL=1;
+
+            #export OPTIONS=--raw; \
 WORKER_ENV="$COMMON_ENV \
             export BYTEPS_PARTITION_BYTES=$BYTEPS_PARTITION_BYTES; \
             export BYTEPS_NCCL_NUM_RINGS=$BYTEPS_NCCL_NUM_RINGS; \
             export BYTEPS_USE_HASH_KEY=$BYTEPS_USE_HASH_KEY; \
             export BYTEPS_FORCE_DISTRIBUTED=$BYTEPS_FORCE_DISTRIBUTED; \
-            export OPTIONS=--raw; \
+            export OPTIONS=--synthetic_data --eval_use_npz; \
+            export LOGINTERVAL=$LOGINTERVAL; \
             export GPUS=0,1,2,3,4,5,6,7; \
             DMLC_ROLE=worker;"
 
