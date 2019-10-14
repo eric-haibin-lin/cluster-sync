@@ -9,7 +9,7 @@ server_hosts=server_8
 worker_hosts=worker_8
 
 server_docker=haibinlin/byteps-server:c5fd6fc
-worker_docker=haibinlin/worker_mxnet:c5fd6fc-0901-cu90-5c2e0
+worker_docker=haibinlin/worker_mxnet:c5fd6fc-0915-cu90
 
 export BYTEPS_PARTITION_BYTES=4096000
 export BYTEPS_NCCL_NUM_RINGS=16
@@ -63,7 +63,7 @@ BS=16384;
 LR=0.00354;
 WARMUP_RATIO=0.1;
 NUMSTEPS=281250;
-CKPTDIR="ckpt_stage1_lamb_16x";
+CKPTDIR="ckpt_stage1_lamb_16k-e2009ac-c5fd6fc-0915-cu90";
 ACC=4;
 COMMIT="e2009ac";
 
