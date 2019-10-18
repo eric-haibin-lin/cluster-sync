@@ -1,11 +1,13 @@
 
 DOCKER_IMAGE=haibinlin/worker_mxnet:c5fd6fc-1.5-cu90-cd9d391d-ccb5a695
 
-GROUP=hvd
+clush --hostfile $HOST "ls ~/efs"
 
-clush -g $GROUP "docker pull $DOCKER_IMAGE"
+clush --hostfile $HOST "docker pull $DOCKER_IMAGE"
 
-clush -g $GROUP "nvidia-docker run -d --security-opt seccomp:unconfined --privileged  \
+exit
+
+clush --hostfile $HOST "nvidia-docker run -d --security-opt seccomp:unconfined --privileged  \
                  -v ~/ssh_info:/root/.ssh  \
                  -v /home/ubuntu/mxnet-data/bert-pretraining/datasets:/data          \
                  -v /home/ubuntu/efs/haibin:/generated                               \
