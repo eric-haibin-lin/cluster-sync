@@ -24,8 +24,8 @@ export BYTEPS_FORCE_DISTRIBUTED=1
 #async=0
 #timeline=0
 
-hudl -v -t -h $server_hosts "sudo pkill python; docker pull $server_docker"
-hudl -v -t -h $worker_hosts "sudo pkill python; docker pull $worker_docker"
+hudl -v -t -h $server_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$server_docker"'
+hudl -v -t -h $worker_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$worker_docker"'
 
 COMMON_ENV="export DMLC_NUM_WORKER=$DMLC_NUM_WORKER; \
             export DMLC_NUM_SERVER=$DMLC_NUM_SERVER; \
@@ -43,7 +43,9 @@ SCRIPT_HOME="/root/gluon-nlp/scripts/bert"
 SCHED_CMD="$SERVER_ENV export DMLC_ROLE=scheduler; python $LAUNCHER"
 SERVER_CMD="$SERVER_ENV export DMLC_ROLE=server; python $LAUNCHER"
 
-ssh -o "StrictHostKeyChecking no" $DMLC_PS_ROOT_URI tmux new -d "$DOCKER -it $server_docker bash -c '$SCHED_CMD'"
+SCHED_TMUX="tmux new -d \"$DOCKER -it $server_docker bash -c '$SCHED_CMD'\""
+
+ssh -o "StrictHostKeyChecking no" $DMLC_PS_ROOT_URI "$SCHED_TMUX"
 
 num_server_iter=0
 target_server_iter=$DMLC_NUM_SERVER/$num_physical_server
@@ -63,24 +65,25 @@ BS=16384;
 LR=0.00354;
 WARMUP_RATIO=0.1;
 NUMSTEPS=281250;
-CKPTDIR="ckpt_stage1_lamb_16k-e2009ac-c5fd6fc-0915-cu90";
-ACC=4;
-COMMIT="e2009ac";
+COMMIT="682a361";
+CKPTDIR="ckpt_stage1_lamb_16k-$COMMIT-c5fd6fc-0412-cu90";
+ACC=1;
 
-LOGINTERVAL=100;
+LOGINTERVAL=10;
 
-            #export OPTIONS=--synthetic_data --eval_use_npz; \
+            #export OPTIONS=--raw; \
 
 WORKER_ENV="$COMMON_ENV \
+            export BYTEPS_LOG_LEVEL=DEBUG \
             export BYTEPS_PARTITION_BYTES=$BYTEPS_PARTITION_BYTES; \
             export BYTEPS_NCCL_NUM_RINGS=$BYTEPS_NCCL_NUM_RINGS; \
             export BYTEPS_USE_HASH_KEY=$BYTEPS_USE_HASH_KEY; \
             export BYTEPS_FORCE_DISTRIBUTED=$BYTEPS_FORCE_DISTRIBUTED; \
             export GPUS=0,1,2,3,4,5,6,7; \
-            export OPTIONS=--raw; \
             export LOGINTERVAL=$LOGINTERVAL; \
             export BS=$BS; \
             export LR=$LR; \
+            export OPTIONS=--synthetic_data\ --eval_use_npz; \
             export WARMUP_RATIO=$WARMUP_RATIO; \
             export NUMSTEPS=$NUMSTEPS; \
             export CKPTDIR=$CKPTDIR; \
@@ -91,9 +94,9 @@ count=0
 while read -u 10 host;
 do
   host=${host%% slots*}
-  WORKER_CMD="cd $SCRIPT_HOME; git fetch origin; git reset --hard $COMMIT; $WORKER_ENV export DMLC_WORKER_ID=$count; bash bps.sh"
+  WORKER_CMD="cd $SCRIPT_HOME; git fetch origin; git reset --hard $COMMIT; $WORKER_ENV export DMLC_WORKER_ID=$count; bash bps.sh; sleep infinity"
   WORKER_CMD_DOCKER="$DOCKER -d $worker_docker bash -c '$WORKER_CMD'"
   echo "$WORKER_CMD_DOCKER on $host"
-  ssh -o "StrictHostKeyChecking no" $host tmux new -d "$DOCKER -d $worker_docker bash -c '$WORKER_CMD'"
+  ssh -tt -o "StrictHostKeyChecking no" $host "tmux new -d \"$WORKER_CMD_DOCKER\""
   let "count+=1"
 done 10<$worker_hosts;
