@@ -9,10 +9,10 @@ server_hosts=server_8
 worker_hosts=worker_8
 
 server_docker=haibinlin/byteps-server:c5fd6fc
-worker_docker=haibinlin/worker_mxnet:c5fd6fc-0915-cu90
+worker_docker=haibinlin/worker_mxnet:c5fd6fc-0412-cu90
 
 export BYTEPS_PARTITION_BYTES=4096000
-export BYTEPS_NCCL_NUM_RINGS=16
+export BYTEPS_NCCL_NUM_RINGS=1
 #export #byte_num_groups=8
 #export #byte_pcie=8
 export SERVER_PUSH_NTHREADS=1
@@ -24,8 +24,8 @@ export BYTEPS_FORCE_DISTRIBUTED=1
 #async=0
 #timeline=0
 
-hudl -v -t -h $server_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$server_docker"'
-hudl -v -t -h $worker_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$worker_docker"'
+clush --hostfile $server_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$server_docker"'
+clush --hostfile $worker_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$worker_docker"'
 
 COMMON_ENV="export DMLC_NUM_WORKER=$DMLC_NUM_WORKER; \
             export DMLC_NUM_SERVER=$DMLC_NUM_SERVER; \
@@ -37,13 +37,13 @@ SERVER_ENV="$COMMON_ENV \
             export MXNET_OMP_MAX_THREADS=$MXNET_OMP_MAX_THREADS; \
             export MXNET_CPU_WORKER_NTHREADS=$MXNET_CPU_WORKER_NTHREADS;"
 
-DOCKER="nvidia-docker run -v ~/.ssh:/root/.ssh -v /home/ubuntu/mxnet-data/bert-pretraining/datasets:/data --network=host --shm-size=32768m"
+DOCKER="nvidia-docker run -v ~/.ssh:/root/.ssh -v /home/ubuntu/mxnet-data/bert-pretraining/datasets:/data -v ~/efs/haibin/bert:/efs --network=host --shm-size=32768m"
 LAUNCHER="/usr/local/byteps/launcher/launch.py"
 SCRIPT_HOME="/root/gluon-nlp/scripts/bert"
 SCHED_CMD="$SERVER_ENV export DMLC_ROLE=scheduler; python $LAUNCHER"
 SERVER_CMD="$SERVER_ENV export DMLC_ROLE=server; python $LAUNCHER"
 
-SCHED_TMUX="tmux new -d \"$DOCKER -it $server_docker bash -c '$SCHED_CMD'\""
+SCHED_TMUX="tmux new -d \"$DOCKER -d $server_docker bash -c '$SCHED_CMD'\""
 
 ssh -o "StrictHostKeyChecking no" $DMLC_PS_ROOT_URI "$SCHED_TMUX"
 
@@ -55,8 +55,8 @@ do
   then
     break
   fi
-  SERVER_CMD_DOCKER="$DOCKER $server_docker bash -c '$SERVER_CMD'"
-  hudl -h $server_hosts -t -v "$SERVER_CMD_DOCKER"
+  SERVER_CMD_DOCKER="$DOCKER -d $server_docker bash -c '$SERVER_CMD'"
+  clush --hostfile $server_hosts "$SERVER_CMD_DOCKER"
   echo "launched $num_physical_server servers"
   let "num_server_iter+=1"
 done;
@@ -66,7 +66,7 @@ LR=0.00354;
 WARMUP_RATIO=0.1;
 NUMSTEPS=281250;
 COMMIT="682a361";
-CKPTDIR="ckpt_stage1_lamb_16k-$COMMIT-c5fd6fc-0412-cu90";
+CKPTDIR="/efs/ckpt_stage1_lamb_32k-$COMMIT-c5fd6fc-0412-cu90";
 ACC=1;
 
 LOGINTERVAL=10;
@@ -100,3 +100,6 @@ do
   ssh -tt -o "StrictHostKeyChecking no" $host "tmux new -d \"$WORKER_CMD_DOCKER\""
   let "count+=1"
 done 10<$worker_hosts;
+
+clush --hostfile $worker_hosts 'docker ps --no-trunc'
+clush --hostfile $server_hosts 'docker ps --no-trunc'
