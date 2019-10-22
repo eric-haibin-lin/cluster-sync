@@ -1,8 +1,10 @@
+### CLUSTER VARIABLES
+
 export DMLC_NUM_WORKER=8
-export DMLC_NUM_SERVER=24
-# this cannot be hostname
+export DMLC_NUM_SERVER=8
+# XXX: this cannot be hostname
 export DMLC_PS_ROOT_URI=172.31.47.42
-export DMLC_PS_ROOT_PORT=1234
+export DMLC_PS_ROOT_PORT=12345
 
 num_physical_server=8
 server_hosts=server_8
@@ -11,21 +13,20 @@ worker_hosts=worker_8
 server_docker=haibinlin/byteps-server:c5fd6fc
 worker_docker=haibinlin/worker_mxnet:c5fd6fc-0412-cu90
 
+
+clush --hostfile $server_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$server_docker"'
+clush --hostfile $worker_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$worker_docker"'
+
+### BYTEPS ENV VARS
+
 export BYTEPS_PARTITION_BYTES=4096000
 export BYTEPS_NCCL_NUM_RINGS=1
-#export #byte_num_groups=8
-#export #byte_pcie=8
 export SERVER_PUSH_NTHREADS=1
 export MXNET_OMP_MAX_THREADS=8
 export MXNET_CPU_WORKER_NTHREADS=1
 export BYTEPS_USE_HASH_KEY=1
 export BYTEPS_FORCE_DISTRIBUTED=1
-#credit_size=0
-#async=0
-#timeline=0
 
-clush --hostfile $server_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$server_docker"'
-clush --hostfile $worker_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$worker_docker"'
 
 COMMON_ENV="export DMLC_NUM_WORKER=$DMLC_NUM_WORKER; \
             export DMLC_NUM_SERVER=$DMLC_NUM_SERVER; \
@@ -60,6 +61,8 @@ do
   echo "launched $num_physical_server servers"
   let "num_server_iter+=1"
 done;
+
+## TRAINING SCRIPT ARGUMENTS
 
 BS=16384;
 LR=0.00354;
