@@ -11,7 +11,8 @@ server_hosts=server_8
 worker_hosts=worker_8
 
 server_docker=haibinlin/byteps-server:c5fd6fc
-worker_docker=haibinlin/worker_mxnet:c5fd6fc-0412-cu90
+# the container is built with https://github.com/eric-haibin-lin/docker/commit/f7679b4b4bfe4fcd2fc805b271fdab15f322facc
+worker_docker=haibinlin/worker_mxnet:c5fd6fc-1.5-cu90-81a7b1c-81a7b1c
 
 
 clush --hostfile $server_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$server_docker"'
@@ -64,19 +65,21 @@ done;
 
 ## TRAINING SCRIPT ARGUMENTS
 
-BS=16384;
-LR=0.00354;
-WARMUP_RATIO=0.1;
-NUMSTEPS=281250;
-COMMIT="682a361";
-CKPTDIR="/efs/ckpt_stage1_lamb_32k-$COMMIT-c5fd6fc-0412-cu90";
-ACC=1;
+BS=32768;
+LR=0.005;
+WARMUP_RATIO=0.2;
+NUMSTEPS=140625;
+COMMIT="d00a840";
+CKPTDIR="/efs/$worker_docker/$COMMIT/ckpt_stage1_lamb_32k";
+ACC=8;
 
 LOGINTERVAL=10;
+BPS_HOME=/usr/local/byteps
 
-            #export OPTIONS=--raw; \
+            #export OPTIONS=--synthetic_data\ --eval_use_npz; \
 
 WORKER_ENV="$COMMON_ENV \
+            export BPS_HOME=$BPS_HOME \
             export BYTEPS_LOG_LEVEL=DEBUG \
             export BYTEPS_PARTITION_BYTES=$BYTEPS_PARTITION_BYTES; \
             export BYTEPS_NCCL_NUM_RINGS=$BYTEPS_NCCL_NUM_RINGS; \
@@ -86,7 +89,8 @@ WORKER_ENV="$COMMON_ENV \
             export LOGINTERVAL=$LOGINTERVAL; \
             export BS=$BS; \
             export LR=$LR; \
-            export OPTIONS=--synthetic_data\ --eval_use_npz; \
+            export NO_SHARD=1; \
+            export OPTIONS=--raw; \
             export WARMUP_RATIO=$WARMUP_RATIO; \
             export NUMSTEPS=$NUMSTEPS; \
             export CKPTDIR=$CKPTDIR; \
