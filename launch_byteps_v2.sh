@@ -68,7 +68,7 @@ done;
 BS=32768;
 LR=0.005;
 WARMUP_RATIO=0.2;
-NUMSTEPS=140625;
+NUMSTEPS=14063;
 COMMIT="d00a840";
 CKPTDIR="/efs/$worker_docker/$COMMIT/ckpt_stage1_lamb_32k";
 ACC=8;
