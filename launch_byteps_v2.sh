@@ -91,6 +91,7 @@ WORKER_ENV="$COMMON_ENV \
             export LR=$LR; \
             export NO_SHARD=1; \
             export OPTIONS=--raw; \
+            export OPTIMIZER=lamb2; \
             export WARMUP_RATIO=$WARMUP_RATIO; \
             export NUMSTEPS=$NUMSTEPS; \
             export CKPTDIR=$CKPTDIR; \
