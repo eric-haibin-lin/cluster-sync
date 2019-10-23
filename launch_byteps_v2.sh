@@ -14,7 +14,10 @@ server_docker=haibinlin/byteps-server:c5fd6fc
 # the container is built with https://github.com/eric-haibin-lin/docker/commit/f7679b4b4bfe4fcd2fc805b271fdab15f322facc
 worker_docker=haibinlin/worker_mxnet:c5fd6fc-1.5-cu90-81a7b1c-81a7b1c
 
+HOME=/home/ec2-user
 
+
+docker pull "$server_docker"
 clush --hostfile $server_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$server_docker"'
 clush --hostfile $worker_hosts 'sudo pkill python; sudo pkill sleep; docker kill $(docker ps -q); docker pull "$worker_docker"'
 
@@ -39,7 +42,7 @@ SERVER_ENV="$COMMON_ENV \
             export MXNET_OMP_MAX_THREADS=$MXNET_OMP_MAX_THREADS; \
             export MXNET_CPU_WORKER_NTHREADS=$MXNET_CPU_WORKER_NTHREADS;"
 
-DOCKER="nvidia-docker run -v ~/.ssh:/root/.ssh -v /home/ubuntu/mxnet-data/bert-pretraining/datasets:/data -v ~/efs/haibin/bert:/efs --network=host --shm-size=32768m"
+DOCKER="nvidia-docker run -v $HOME/.ssh:/root/.ssh -v $HOME/mxnet-data/bert-pretraining/datasets:/data -v $HOME/efs/haibin/13-nodes:/efs --network=host --shm-size=32768m"
 LAUNCHER="/usr/local/byteps/launcher/launch.py"
 SCRIPT_HOME="/root/gluon-nlp/scripts/bert"
 SCHED_CMD="$SERVER_ENV export DMLC_ROLE=scheduler; python $LAUNCHER"
