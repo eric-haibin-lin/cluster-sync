@@ -113,5 +113,5 @@ do
   let "count+=1"
 done 10<$worker_hosts;
 
-clush --hostfile $worker_hosts 'docker ps --no-trunc'
 clush --hostfile $server_hosts 'docker ps --no-trunc'
+clush --hostfile $worker_hosts 'docker ps --no-trunc'
