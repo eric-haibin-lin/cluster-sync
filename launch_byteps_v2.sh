@@ -69,7 +69,7 @@ BS=32768;
 LR=0.005;
 WARMUP_RATIO=0.2;
 NUMSTEPS=14063;
-COMMIT="d00a840";
+COMMIT="07fe9f89";
 CKPTDIR="/efs/$worker_docker/$COMMIT/ckpt_stage1_lamb_32k";
 ACC=8;
 
@@ -90,6 +90,7 @@ WORKER_ENV="$COMMON_ENV \
             export BS=$BS; \
             export LR=$LR; \
             export NO_SHARD=1; \
+            export USE_BOUND=1; \
             export OPTIONS=--raw; \
             export OPTIMIZER=lamb2; \
             export WARMUP_RATIO=$WARMUP_RATIO; \
