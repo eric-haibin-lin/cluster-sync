@@ -67,19 +67,28 @@ do
 done;
 
 ## TRAINING SCRIPT ARGUMENTS
-
-BS=32768;
-LR=0.005;
-WARMUP_RATIO=0.2;
+DEBUG=0;
+DOCKER_DEBUG=0;
+BS=65520
+ACC=9;
+#BS=64512;
+#ACC=8;
+LR=0.006;
+WARMUP_RATIO=0.284;
 NUMSTEPS=14063;
-COMMIT="07fe9f89";
-CKPTDIR="/efs/$worker_docker/$COMMIT/ckpt_stage1_lamb_32k";
-ACC=8;
+NUMSTEPS=7102;
+COMMIT="ade21cd4";
+CKPTDIR="/efs/$worker_docker/$COMMIT/ckpt_stage1_lamb_63k";
 
-LOGINTERVAL=10;
 BPS_HOME=/usr/local/byteps
 
-            #export OPTIONS=--synthetic_data\ --eval_use_npz; \
+if [ "$DEBUG" == "1" ]; then
+   export OPTIONS="--synthetic_data\ --eval_use_npz";
+   export LOGINTERVAL=1;
+else
+   export OPTIONS="--raw";
+   export LOGINTERVAL=10;
+fi
 
 WORKER_ENV="$COMMON_ENV \
             export BPS_HOME=$BPS_HOME \
@@ -94,7 +103,8 @@ WORKER_ENV="$COMMON_ENV \
             export LR=$LR; \
             export NO_SHARD=1; \
             export USE_BOUND=1; \
-            export OPTIONS=--raw; \
+            export ADJUST_BOUND=1; \
+            export OPTIONS=$OPTIONS; \
             export OPTIMIZER=lamb2; \
             export WARMUP_RATIO=$WARMUP_RATIO; \
             export NUMSTEPS=$NUMSTEPS; \
@@ -109,7 +119,11 @@ do
   WORKER_CMD="cd $SCRIPT_HOME; git fetch origin; git reset --hard $COMMIT; $WORKER_ENV export DMLC_WORKER_ID=$count; bash bps.sh; sleep infinity"
   WORKER_CMD_DOCKER="$DOCKER -d $worker_docker bash -c '$WORKER_CMD'"
   echo "$WORKER_CMD_DOCKER on $host"
-  ssh -tt -o "StrictHostKeyChecking no" $host "tmux new -d \"$WORKER_CMD_DOCKER\""
+  if [ "$DOCKER_DEBUG" == "1" ]; then
+     ssh -tt -o "StrictHostKeyChecking no" $host "$WORKER_CMD_DOCKER"
+  else
+     ssh -tt -o "StrictHostKeyChecking no" $host "tmux new -d \"$WORKER_CMD_DOCKER\""
+  fi
   let "count+=1"
 done 10<$worker_hosts;
 
